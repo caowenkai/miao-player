@@ -1,6 +1,6 @@
 <template>
   <div class="layout">
-    <div class="content">
+    <div class="content" :class="{ 'no-scroll': currentTab === 'player' }">
       <router-view />
     </div>
     
@@ -149,14 +149,30 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 100dvh; /* 动态视口高度，移动端更准确 */
+  width: 100%;
+  background: var(--theme-background);
+  background-attachment: fixed;
+  position: relative;
+  overflow: hidden;
 }
 
 .content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 70px;
+  width: 100%;
+  position: relative;
+  /* 为底部 tab 留出空间 */
+  padding-bottom: 60px;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0; /* 重要：允许 flex 子元素缩小 */
+}
+
+/* 播放器页面特殊处理：不产生滚动条 */
+.content.no-scroll {
+  overflow: hidden;
+  padding-bottom: 0;
 }
 
 .tab-bar {
@@ -172,6 +188,8 @@ onMounted(async () => {
   justify-content: space-around;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   z-index: 100;
+  /* 移动端安全区域适配 */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .tab-item {
@@ -183,6 +201,14 @@ onMounted(async () => {
   padding: 8px 20px;
   color: #999;
   transition: all 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-item:active {
+  opacity: 0.7;
 }
 
 .tab-item.active {
@@ -194,10 +220,61 @@ onMounted(async () => {
   height: 24px;
   fill: currentColor;
   margin-bottom: 4px;
+  flex-shrink: 0;
 }
 
 .tab-item span {
   font-size: 12px;
+  white-space: nowrap;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .tab-bar {
+    height: 60px;
+  }
+  
+  .content {
+    padding-bottom: 60px;
+  }
+  
+  .tab-item {
+    padding: 8px 15px;
+  }
+  
+  .icon {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .tab-item span {
+    font-size: 11px;
+  }
+}
+
+/* 小屏幕手机 */
+@media (max-width: 480px) {
+  .tab-bar {
+    height: 56px;
+  }
+  
+  .content {
+    padding-bottom: 56px;
+  }
+  
+  .tab-item {
+    padding: 6px 12px;
+  }
+  
+  .icon {
+    width: 20px;
+    height: 20px;
+    margin-bottom: 2px;
+  }
+  
+  .tab-item span {
+    font-size: 10px;
+  }
 }
 </style>
 

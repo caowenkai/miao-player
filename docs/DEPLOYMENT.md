@@ -323,17 +323,37 @@ npm install --production
 
 ```bash
 cd /var/www/miao-player/backend
-cp .env.example .env
-nano .env
+
+# 创建 .env 文件
+cat > .env << EOF
+PORT=3000
+DATABASE_PATH=/var/www/miao-player/backend/data/database.db
+UPLOAD_PATH=/var/www/miao-player/uploads
+NODE_ENV=production
+EOF
+
+# 或者使用编辑器手动创建和编辑
+# CentOS/TencentOS 用户使用 vi：
+# vi .env
+# Ubuntu/Debian 用户可以使用 nano：
+# nano .env
 ```
 
-修改 `.env` 文件：
+`.env` 文件内容：
 
 ```env
 PORT=3000
 DATABASE_PATH=/var/www/miao-player/backend/data/database.db
 UPLOAD_PATH=/var/www/miao-player/uploads
+NODE_ENV=production
 ```
+
+> **提示**: 
+> - 使用 `cat > .env << EOF` 命令可以直接创建文件并写入内容（推荐）
+> - 如果需要修改：
+>   - CentOS/TencentOS：使用 `vi .env` 或 `vim .env`
+>   - Ubuntu/Debian：使用 `nano .env`
+>   - 如果想在 CentOS 上使用 nano：`sudo yum install -y nano`
 
 ### 4. 初始化数据库
 
@@ -388,11 +408,166 @@ npm run build
 
 ### 1. 创建 Nginx 配置文件
 
+**重要**: CentOS 和 Ubuntu 的 Nginx 配置路径不同！
+
+**CentOS/TencentOS 用户**：
+
 ```bash
-sudo nano /etc/nginx/sites-available/miao-player
+# CentOS 使用 conf.d 目录
+sudo vi /etc/nginx/conf.d/miao-player.conf
 ```
 
+**Ubuntu/Debian 用户**：
+
+```bash
+# Ubuntu 使用 sites-available 目录
+sudo nano /etc/nginx/sites-available/miao-player
+# 或
+sudo vi /etc/nginx/sites-available/miao-player
+```
+
+**如果想在 CentOS 上安装 nano**（可选）：
+
+```bash
+sudo yum install -y nano
+sudo nano /etc/nginx/conf.d/miao-player.conf
+```
+
+> **vi/vim 详细使用说明**：
+> 
+> 1. **打开文件**：`sudo vi /etc/nginx/conf.d/miao-player.conf`
+> 2. **进入编辑模式**：按 `i` 键（屏幕左下角会显示 `-- INSERT --`）
+> 3. **粘贴内容**：右键粘贴或使用 `Shift + Insert`
+> 4. **退出编辑模式**：按 `Esc` 键（左下角的 `-- INSERT --` 消失）
+> 5. **保存并退出**：
+>    - 输入 `:wq` 然后按 `Enter`（保存并退出）
+>    - 或者输入 `:x` 然后按 `Enter`（保存并退出）
+> 6. **不保存退出**：输入 `:q!` 然后按 `Enter`
+> 
+> **常见问题**：
+> - 如果提示 "readonly" 或 "E45: 'readonly' option is set"，说明没有使用 `sudo`，需要退出后重新用 `sudo` 打开
+> - 如果提示 "E212: Can't open file for writing"，检查路径是否正确，或使用 `sudo` 权限
+> - 如果无法输入，按 `Esc` 后再按 `i` 进入插入模式
+
 ### 2. 添加以下配置
+
+**根据是否有域名选择配置方案：**
+
+#### 方案 A：使用 IP 地址访问（无域名）
+
+如果**没有域名**，可以使用两种方式：
+
+**方式 1：使用不同端口（推荐，最简单）**
+
+```nginx
+# 应用端 - 访问 http://你的IP:80
+server {
+    listen 80;
+    server_name _;  # 接受所有请求
+    
+    # 允许上传大文件（如果需要通过应用端上传）
+    client_max_body_size 100M;
+    
+    root /var/www/miao-player/frontend-app/dist;
+    index index.html;
+    
+    gzip on;
+    gzip_types text/css application/javascript application/json;
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    location /api {
+        # API 代理也需要设置文件大小限制
+        client_max_body_size 100M;
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # 增加超时时间，用于大文件上传
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+    
+    location /uploads {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+# 后台管理 - 访问 http://你的IP:8080
+server {
+    listen 8080;
+    server_name _;
+    
+    # 允许上传大文件（100MB，可根据需要调整）
+    client_max_body_size 100M;
+    
+    root /var/www/miao-player/frontend-admin/dist;
+    index index.html;
+    
+    gzip on;
+    gzip_types text/css application/javascript application/json;
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    location /api {
+        # API 代理也需要设置文件大小限制
+        client_max_body_size 100M;
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # 增加超时时间，用于大文件上传
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+    
+    location /uploads {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+}
+```
+
+**访问地址**：
+- 应用端：`http://你的服务器IP` 或 `http://你的服务器IP:80`
+- 后台管理：`http://你的服务器IP:8080`
+
+**需要开放端口 8080**：
+```bash
+# 如果使用 firewalld
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+
+# 如果使用 iptables
+sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
+sudo service iptables save
+```
+
+**方式 2：使用路径区分（需要修改前端配置）**
+
+如果不想使用不同端口，可以使用路径，但需要修改前端路由配置（不推荐，较复杂）。
+
+#### 方案 B：使用域名访问（有域名时）
+
+如果**有域名**，使用域名访问：
 
 ```nginx
 # 应用端配置
@@ -475,10 +650,35 @@ server {
 }
 ```
 
+**访问地址**：
+- 应用端：`http://app.yourdomain.com`
+- 后台管理：`http://admin.yourdomain.com`
+
+> **提示**: 
+> - 如果没有域名，使用**方案 A**（IP + 路径）
+> - 如果有域名，使用**方案 B**（域名）
+> - 后续有域名后，可以修改配置并申请 SSL 证书
+
 ### 3. 启用配置并重启 Nginx
 
+**CentOS/TencentOS 用户**：
+
 ```bash
-# 创建符号链接
+# CentOS 的 conf.d 目录会自动加载，无需创建符号链接
+# 直接测试配置
+sudo nginx -t
+
+# 如果测试通过，重启 Nginx
+sudo systemctl restart nginx
+
+# 查看状态
+sudo systemctl status nginx
+```
+
+**Ubuntu/Debian 用户**：
+
+```bash
+# Ubuntu 需要创建符号链接
 sudo ln -s /etc/nginx/sites-available/miao-player /etc/nginx/sites-enabled/
 
 # 测试配置
@@ -487,6 +687,10 @@ sudo nginx -t
 # 重启 Nginx
 sudo systemctl restart nginx
 ```
+
+> **提示**: 
+> - CentOS 的 `/etc/nginx/conf.d/` 目录下的 `.conf` 文件会自动加载
+> - Ubuntu 需要手动创建符号链接到 `sites-enabled` 目录
 
 ## 启动服务
 
@@ -511,7 +715,9 @@ pm2 restart miao-player-backend
 sudo systemctl restart nginx
 ```
 
-## 域名和 SSL 配置
+## 域名和 SSL 配置（可选）
+
+> **提示**: 如果没有域名，可以**跳过此步骤**，直接使用 IP 地址访问即可。后续有域名后，再回来配置。
 
 ### 1. 配置域名解析
 

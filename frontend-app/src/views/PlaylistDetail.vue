@@ -116,7 +116,10 @@ onMounted(() => {
 .playlist-detail-page {
   min-height: 100vh;
   padding: 20px;
-  color: white;
+  padding-bottom: 80px; /* 为底部 tab 留出空间 */
+  color: var(--theme-text);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header {
@@ -130,7 +133,7 @@ onMounted(() => {
   width: 40px;
   height: 40px;
   border: none;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--theme-card-bg);
   backdrop-filter: blur(10px);
   border-radius: 50%;
   display: flex;
@@ -138,10 +141,21 @@ onMounted(() => {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
+  color: var(--theme-text);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+.back-btn:active {
+  background: var(--theme-card-bg-hover);
+  transform: scale(0.95);
+}
+
+@media (hover: hover) {
+  .back-btn:hover {
+    background: var(--theme-card-bg-hover);
+  }
 }
 
 .back-btn svg {
@@ -150,55 +164,75 @@ onMounted(() => {
 }
 
 .page-title {
-  font-size: 24px;
+  font-size: clamp(20px, 5.5vw, 24px);
   font-weight: 600;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .playlist-desc {
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theme-card-bg);
   backdrop-filter: blur(10px);
   border-radius: 8px;
   margin-bottom: 16px;
   opacity: 0.9;
+  word-break: break-word;
+  line-height: 1.6;
 }
 
 .playlist-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .action-btn {
   padding: 10px 20px;
   border: none;
-  background: rgba(255, 255, 255, 0.9);
-  color: #667eea;
+  background: var(--theme-card-bg-hover);
+  color: var(--theme-primary);
   border-radius: 20px;
-  font-size: 14px;
+  font-size: clamp(13px, 3.5vw, 14px);
   font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   transition: all 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  white-space: nowrap;
 }
 
-.action-btn:hover {
-  background: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+.action-btn:active {
+  background: var(--theme-card-bg);
+  transform: scale(0.95);
+}
+
+@media (hover: hover) {
+  .action-btn:hover {
+    background: var(--theme-card-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .action-btn svg {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
 }
 
 .song-count {
   opacity: 0.8;
+  font-size: clamp(12px, 3.5vw, 14px);
 }
 
 .loading,
@@ -209,7 +243,7 @@ onMounted(() => {
 }
 
 .song-list {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theme-card-bg);
   backdrop-filter: blur(10px);
   border-radius: 12px;
   overflow: hidden;
@@ -218,30 +252,39 @@ onMounted(() => {
 .song-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px 16px;
   cursor: pointer;
   transition: all 0.3s;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--theme-border);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .song-item:last-child {
   border-bottom: none;
 }
 
-.song-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+.song-item:active {
+  background: var(--theme-card-bg-hover);
+}
+
+@media (hover: hover) {
+  .song-item:hover {
+    background: var(--theme-card-bg-hover);
+  }
 }
 
 .song-item.active {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--theme-card-bg-hover);
 }
 
 .song-index {
-  width: 30px;
+  width: 28px;
   text-align: center;
-  font-size: 14px;
+  font-size: clamp(13px, 3.5vw, 14px);
   opacity: 0.6;
+  flex-shrink: 0;
 }
 
 .song-info-wrapper {
@@ -250,7 +293,7 @@ onMounted(() => {
 }
 
 .song-name {
-  font-size: 15px;
+  font-size: clamp(14px, 4vw, 15px);
   font-weight: 500;
   margin-bottom: 4px;
   overflow: hidden;
@@ -259,8 +302,11 @@ onMounted(() => {
 }
 
 .song-meta {
-  font-size: 13px;
+  font-size: clamp(12px, 3.5vw, 13px);
   opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .playing-icon {
@@ -268,6 +314,7 @@ onMounted(() => {
   align-items: flex-end;
   gap: 3px;
   height: 16px;
+  flex-shrink: 0;
 }
 
 .bar {
@@ -295,6 +342,57 @@ onMounted(() => {
   }
   50% {
     height: 16px;
+  }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .playlist-detail-page {
+    padding: 15px;
+    padding-bottom: 80px;
+  }
+  
+  .song-item {
+    padding: 12px;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .playlist-detail-page {
+    padding: 10px;
+    padding-bottom: 80px;
+  }
+  
+  .header {
+    gap: 10px;
+  }
+  
+  .back-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .back-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .playlist-actions {
+    gap: 10px;
+  }
+  
+  .action-btn {
+    padding: 8px 16px;
+  }
+  
+  .song-item {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  
+  .song-index {
+    width: 24px;
   }
 }
 </style>

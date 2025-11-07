@@ -65,12 +65,15 @@ onMounted(() => {
 <style scoped>
 .playlists-page {
   padding: 20px;
+  padding-bottom: 80px; /* 为底部 tab 留出空间 */
   min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .page-title {
-  color: white;
-  font-size: 28px;
+  color: var(--theme-text);
+  font-size: clamp(22px, 6vw, 28px);
   font-weight: 600;
   margin-bottom: 24px;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -79,7 +82,7 @@ onMounted(() => {
 .loading,
 .empty {
   text-align: center;
-  color: white;
+  color: var(--theme-text);
   padding: 60px 20px;
   font-size: 16px;
   opacity: 0.8;
@@ -87,35 +90,44 @@ onMounted(() => {
 
 .playlists-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 16px;
 }
 
 .playlist-card {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theme-card-bg);
   backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 16px;
   cursor: pointer;
   transition: all 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.playlist-card:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+.playlist-card:active {
+  background: var(--theme-card-bg-hover);
+  transform: scale(0.98);
+}
+
+@media (hover: hover) {
+  .playlist-card:hover {
+    background: var(--theme-card-bg-hover);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .playlist-cover {
   width: 100%;
   aspect-ratio: 1;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theme-card-bg);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
-  color: white;
+  color: var(--theme-text);
 }
 
 .playlist-cover svg {
@@ -124,11 +136,11 @@ onMounted(() => {
 }
 
 .playlist-info {
-  color: white;
+  color: var(--theme-text);
 }
 
 .playlist-name {
-  font-size: 16px;
+  font-size: clamp(14px, 4vw, 16px);
   font-weight: 500;
   margin-bottom: 4px;
   overflow: hidden;
@@ -137,8 +149,41 @@ onMounted(() => {
 }
 
 .playlist-count {
-  font-size: 13px;
+  font-size: clamp(12px, 3.5vw, 13px);
   opacity: 0.8;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .playlists-page {
+    padding: 15px;
+    padding-bottom: 80px;
+  }
+  
+  .playlists-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  
+  .playlist-card {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .playlists-page {
+    padding: 10px;
+    padding-bottom: 80px;
+  }
+  
+  .playlists-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .playlist-card {
+    padding: 10px;
+  }
 }
 </style>
 

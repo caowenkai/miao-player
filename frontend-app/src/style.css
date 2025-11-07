@@ -4,20 +4,60 @@
   box-sizing: border-box;
 }
 
+html {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  /* 禁用系统颜色方案自动应用 */
+  color-scheme: light dark;
+  /* 强制使用我们自己的主题，不受系统偏好影响 */
+  forced-color-adjust: none;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-background, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+  background-attachment: fixed;
   min-height: 100vh;
+  width: 100%;
   overflow-x: hidden;
+  position: relative;
+  color: var(--theme-text, #ffffff);
+  /* 禁用系统颜色方案自动应用 */
+  color-scheme: light dark;
+  forced-color-adjust: none;
 }
 
 #app {
   width: 100%;
   min-height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
+  /* 确保应用层也不受系统主题影响 */
+  color-scheme: light dark;
+  forced-color-adjust: none;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  body {
+    /* 防止移动端缩放 */
+    -webkit-user-select: none;
+    user-select: none;
+    /* 防止双击缩放 */
+    touch-action: manipulation;
+  }
+  
+  /* 允许文本选择 */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 
 ::-webkit-scrollbar {

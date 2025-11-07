@@ -356,18 +356,24 @@ pm2 logs miao-player-backend
 sudo vi /etc/nginx/conf.d/miao-player.conf
 ```
 
-粘贴以下配置（**替换 yourdomain.com 为你的域名**）：
+粘贴以下配置（**根据是否有域名选择配置方案**）：
+
+#### 方案 A：使用 IP 地址访问（无域名，推荐）
+
+如果**没有域名**，使用不同端口访问：
 
 ```nginx
-# 应用端配置
+# 应用端 - 访问 http://你的IP:80
 server {
     listen 80;
-    server_name app.yourdomain.com;
+    server_name _;  # 接受所有请求
+    
+    # 允许上传大文件（100MB，可根据需要调整）
+    client_max_body_size 100M;
     
     root /var/www/miao-player/frontend-app/dist;
     index index.html;
     
-    # Gzip 压缩
     gzip on;
     gzip_types text/css application/javascript application/json image/svg+xml;
     gzip_min_length 1000;
@@ -376,7 +382,110 @@ server {
         try_files $uri $uri/ /index.html;
     }
     
-    # API 代理
+    location /api {
+        # API 代理也需要设置文件大小限制
+        client_max_body_size 100M;
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # 增加超时时间，用于大文件上传
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+    
+    location /uploads {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_buffering off;
+    }
+}
+
+# 后台管理 - 访问 http://你的IP:8080
+server {
+    listen 8080;
+    server_name _;
+    
+    # 允许上传大文件（100MB，可根据需要调整）
+    client_max_body_size 100M;
+    
+    root /var/www/miao-player/frontend-admin/dist;
+    index index.html;
+    
+    gzip on;
+    gzip_types text/css application/javascript application/json;
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    location /api {
+        # API 代理也需要设置文件大小限制
+        client_max_body_size 100M;
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # 增加超时时间，用于大文件上传
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+    
+    location /uploads {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+}
+```
+
+**访问地址**：
+- 应用端：`http://你的服务器IP` 或 `http://你的服务器IP:80`
+- 后台管理：`http://你的服务器IP:8080`
+
+**需要开放端口 8080**：
+```bash
+# 使用 firewalld
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+
+# 或使用 iptables
+sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
+sudo service iptables save
+```
+
+#### 方案 B：使用域名访问（有域名时）
+
+如果**有域名**，使用域名访问：
+
+```nginx
+# 应用端配置
+server {
+    listen 80;
+    server_name app.yourdomain.com;  # 替换为你的域名
+    
+    root /var/www/miao-player/frontend-app/dist;
+    index index.html;
+    
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1000;
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
     location /api {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -388,7 +497,6 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
     
-    # 音频文件代理
     location /uploads {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -401,7 +509,7 @@ server {
 # 后台管理系统配置
 server {
     listen 80;
-    server_name admin.yourdomain.com;
+    server_name admin.yourdomain.com;  # 替换为你的域名
     
     root /var/www/miao-player/frontend-admin/dist;
     index index.html;
@@ -413,7 +521,6 @@ server {
         try_files $uri $uri/ /index.html;
     }
     
-    # API 代理
     location /api {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -422,7 +529,6 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
     
-    # 音频文件代理
     location /uploads {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -430,6 +536,15 @@ server {
     }
 }
 ```
+
+**访问地址**：
+- 应用端：`http://app.yourdomain.com`
+- 后台管理：`http://admin.yourdomain.com`
+
+> **提示**: 
+> - 如果没有域名，使用**方案 A**（IP + 端口）
+> - 如果有域名，使用**方案 B**（域名）
+> - 后续有域名后，可以修改配置并申请 SSL 证书
 
 ### 2. 测试并重启 Nginx
 
@@ -446,7 +561,9 @@ sudo systemctl status nginx
 
 ---
 
-## 第四步：配置域名和 SSL
+## 第四步：配置域名和 SSL（可选）
+
+> **提示**: 如果没有域名，可以**跳过此步骤**，直接使用 IP 地址访问即可。后续有域名后，再回来配置。
 
 ### 1. 配置域名解析
 
